@@ -1,0 +1,10 @@
+{
+  "name": "PronounceAI",
+  "description": "AI-powered English pronunciation and speech practice platform with real-time audio feedback, phonetic analysis, AI voice tutor, and interactive daily challenges.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
