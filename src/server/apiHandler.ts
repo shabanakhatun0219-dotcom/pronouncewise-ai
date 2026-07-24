@@ -32,7 +32,25 @@ Return a valid JSON object with:
 - overallScore: number (0 to 100)
 - clarityScore: number
 - rhythmScore: number
-- intonationScore: number
+- intonationScore: number (0 to 100)
+- pitchScore: number (0 to 100)
+- speechRateWpm: number (e.g. 135)
+- wordStress: string (e.g. "Primary stress on syllable 2")
+- fluencyScore: number (0 to 100)
+- confidenceScore: number (0 to 100)
+- volumeLevel: string (e.g. "74 dB (Optimal)")
+- pitchAnalysis: object with fields:
+  - overallScore: number
+  - pitchScore: number
+  - intonationScore: number
+  - speechRateWpm: number
+  - wordStress: string
+  - fluencyScore: number
+  - confidenceScore: number
+  - volumeLevel: string
+  - pitchData: array of objects { time: string, userPitch: number (Hz), nativePitch: number (Hz), status: "optimal"|"flat"|"too_high"|"too_low", wordLabel: string }
+  - highlightedSections: array of objects { section: string, issue: "flat"|"too_high"|"too_low", message: string }
+  - aiSuggestions: string array of actionable suggestions
 - aiFeedback: detailed actionable advice string
 - mouthTip: specific mouth/tongue positioning tip
 - syllables: string array of syllables

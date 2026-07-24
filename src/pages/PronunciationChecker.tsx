@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ScoreGauge } from '../components/ScoreGauge';
 import { PhonemeBreakdown } from '../components/PhonemeBreakdown';
+import { AcousticAnalysisView } from '../components/AcousticAnalysisView';
 import { AudioVisualizer } from '../components/AudioVisualizer';
 import { evaluatePronunciationAPI } from '../services/api';
 import { startAudioRecording, speakText, SpeechRecognizer, AudioRecorderState } from '../services/audioService';
@@ -83,7 +84,22 @@ export const PronunciationChecker: React.FC = () => {
     setIsEvaluating(false);
 
     // Record practice result & update user stats automatically
-    recordPracticeResult(inputText, res.overallScore, 'AI Pronunciation Check');
+    recordPracticeResult(inputText, res.overallScore, 'AI Pronunciation Check', {
+      accuracyScore: res.accuracyScore,
+      pitchScore: res.pitchScore || res.pitchAnalysis?.pitchScore,
+      intonationScore: res.intonationScore || res.pitchAnalysis?.intonationScore,
+      speechRateWpm: res.speechRateWpm || res.pitchAnalysis?.speechRateWpm,
+      fluencyScore: res.fluencyScore || res.pitchAnalysis?.fluencyScore,
+      confidenceScore: res.confidenceScore || res.pitchAnalysis?.confidenceScore,
+      volumeLevel: res.volumeLevel || res.pitchAnalysis?.volumeLevel,
+      wordStress: res.wordStress || res.pitchAnalysis?.wordStress,
+      pitchAnalysis: res.pitchAnalysis,
+      formantAnalysis: res.formantAnalysis,
+      mfccAnalysis: res.mfccAnalysis,
+      mfccSimilarityScore: res.mfccSimilarityScore,
+      mispronouncedSounds: res.mispronouncedSounds,
+      aiSuggestions: res.aiSuggestions
+    });
 
     if (res.overallScore >= 85) {
       confetti({
@@ -306,6 +322,27 @@ export const PronunciationChecker: React.FC = () => {
             syllables={result.syllables}
             stressedSyllableIndex={result.stressedSyllableIndex}
             word={result.word}
+          />
+
+          {/* Comprehensive Acoustic (Formants, MFCC, Pitch & Intonation) Analysis */}
+          <AcousticAnalysisView
+            language="English"
+            wordOrSentence={result.word}
+            overallScore={result.overallScore}
+            accuracyScore={result.accuracyScore}
+            fluencyScore={result.fluencyScore || result.pitchAnalysis?.fluencyScore}
+            confidenceScore={result.confidenceScore || result.pitchAnalysis?.confidenceScore}
+            pitchScore={result.pitchScore || result.pitchAnalysis?.pitchScore}
+            intonationScore={result.intonationScore || result.pitchAnalysis?.intonationScore}
+            speechRateWpm={result.speechRateWpm || result.pitchAnalysis?.speechRateWpm}
+            wordStress={result.wordStress || result.pitchAnalysis?.wordStress}
+            volumeLevel={result.volumeLevel || result.pitchAnalysis?.volumeLevel}
+            formantAnalysis={result.formantAnalysis}
+            mfccAnalysis={result.mfccAnalysis}
+            mfccSimilarityScore={result.mfccSimilarityScore}
+            pitchAnalysis={result.pitchAnalysis}
+            mispronouncedSounds={result.mispronouncedSounds}
+            aiSuggestions={result.aiSuggestions}
           />
         </motion.div>
       )}

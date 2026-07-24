@@ -18,6 +18,7 @@ import {
   FileText
 } from 'lucide-react';
 import { TUTOR_SCENARIOS } from '../data/mockData';
+import { generateAcousticReport } from '../services/acousticAnalysis';
 import { TutorScenario, TutorMessage } from '../types';
 import { askAITutorAPI } from '../services/api';
 import { speakText, startAudioRecording, SpeechRecognizer, AudioRecorderState } from '../services/audioService';
@@ -133,7 +134,24 @@ export const SpeakingPracticePage: React.FC = () => {
       improvementTip: aiResp.improvementTip || activeScenario.improvementTips[0]
     });
 
-    recordPracticeResult(activeScenario.title, aiResp.score || 88, 'AI Tutor Dialogue');
+    const acousticReport = generateAcousticReport(userText, aiResp.score || 88, 'English');
+
+    recordPracticeResult(activeScenario.title, aiResp.score || 88, 'AI Tutor Dialogue', {
+      accuracyScore: acousticReport.accuracyScore,
+      pitchScore: acousticReport.pitchScore,
+      intonationScore: acousticReport.intonationScore,
+      speechRateWpm: acousticReport.speechRateWpm,
+      fluencyScore: acousticReport.fluencyScore,
+      confidenceScore: acousticReport.confidenceScore,
+      volumeLevel: acousticReport.volumeLevel,
+      wordStress: acousticReport.wordStress,
+      pitchAnalysis: acousticReport.pitchAnalysis,
+      formantAnalysis: acousticReport.formantAnalysis,
+      mfccAnalysis: acousticReport.mfccAnalysis,
+      mfccSimilarityScore: acousticReport.mfccAnalysis.similarityScore,
+      mispronouncedSounds: acousticReport.mispronouncedSounds,
+      aiSuggestions: acousticReport.aiSuggestions
+    });
 
     // Automatically speak AI tutor reply
     speakText(aiResp.text, activeScenario.accent);

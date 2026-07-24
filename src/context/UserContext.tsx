@@ -100,7 +100,12 @@ interface UserContextType {
   weeklyProgress: WeeklyScore[];
   addXP: (amount: number) => void;
   incrementPracticeTime: (minutes: number) => void;
-  recordPracticeResult: (word: string, score: number, type?: string) => void;
+  recordPracticeResult: (
+    word: string,
+    score: number,
+    type?: string,
+    details?: Partial<PracticeRecord>
+  ) => void;
   toggleSaveWord: (word: string) => void;
   completeChallenge: (challengeId: string, score: number) => void;
   updateUserAccent: (accent: 'US' | 'UK' | 'AU') => void;
@@ -236,7 +241,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
   };
 
-  const recordPracticeResult = (word: string, score: number, type = 'Pronunciation Practice') => {
+  const recordPracticeResult = (
+    word: string,
+    score: number,
+    type = 'Pronunciation Practice',
+    details?: Partial<PracticeRecord>
+  ) => {
     setUserDataStore(prev => {
       const newSessions = prev.user.practiceSessions + 1;
       const newXP = prev.user.xpPoints + (score >= 80 ? 50 : 20);
@@ -252,7 +262,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         word,
         score,
         date: 'Just now',
-        type
+        type,
+        accuracyScore: details?.accuracyScore,
+        pitchScore: details?.pitchScore,
+        intonationScore: details?.intonationScore,
+        speechRateWpm: details?.speechRateWpm,
+        fluencyScore: details?.fluencyScore,
+        confidenceScore: details?.confidenceScore,
+        volumeLevel: details?.volumeLevel,
+        wordStress: details?.wordStress,
+        pitchAnalysis: details?.pitchAnalysis,
+        formantAnalysis: details?.formantAnalysis,
+        mfccAnalysis: details?.mfccAnalysis,
+        mfccSimilarityScore: details?.mfccSimilarityScore,
+        mispronouncedSounds: details?.mispronouncedSounds,
+        aiSuggestions: details?.aiSuggestions
       };
 
       // Update weekly progress

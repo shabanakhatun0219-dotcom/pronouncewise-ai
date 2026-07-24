@@ -44,6 +44,9 @@ import {
   GraduationCap
 } from 'lucide-react';
 
+import { AcousticAnalysisView } from '../components/AcousticAnalysisView';
+import { generateAcousticReport, ComprehensiveAcousticReport } from '../services/acousticAnalysis';
+
 type AssameseSubTab = 'words' | 'sentences' | 'conversation' | 'reading' | 'vocab' | 'history';
 
 interface EvaluationResult {
@@ -54,6 +57,7 @@ interface EvaluationResult {
   feedbackTips: string[];
   grammarTip?: string;
   vocabTip?: string;
+  acousticReport?: ComprehensiveAcousticReport;
 }
 
 export const AssamesePracticePage: React.FC = () => {
@@ -241,9 +245,26 @@ export const AssamesePracticePage: React.FC = () => {
 
     const simulatedUserTranscript = targetText;
     const res = evaluateSpeech(targetText, simulatedUserTranscript);
+    const acousticReport = generateAcousticReport(targetText, res.pronunciationScore, 'Assamese');
+    res.acousticReport = acousticReport;
 
     // Record into global practice history & award XP
-    recordPracticeResult(targetText, res.pronunciationScore, `Assamese ${practiceType}`);
+    recordPracticeResult(targetText, res.pronunciationScore, `Assamese ${practiceType}`, {
+      accuracyScore: acousticReport.accuracyScore,
+      pitchScore: acousticReport.pitchScore,
+      intonationScore: acousticReport.intonationScore,
+      speechRateWpm: acousticReport.speechRateWpm,
+      fluencyScore: acousticReport.fluencyScore,
+      confidenceScore: acousticReport.confidenceScore,
+      volumeLevel: acousticReport.volumeLevel,
+      wordStress: acousticReport.wordStress,
+      pitchAnalysis: acousticReport.pitchAnalysis,
+      formantAnalysis: acousticReport.formantAnalysis,
+      mfccAnalysis: acousticReport.mfccAnalysis,
+      mfccSimilarityScore: acousticReport.mfccAnalysis.similarityScore,
+      mispronouncedSounds: acousticReport.mispronouncedSounds,
+      aiSuggestions: acousticReport.aiSuggestions
+    });
 
     return res;
   };

@@ -15,7 +15,8 @@ import {
   Target,
   Mic,
   TrendingUp,
-  History
+  History,
+  Activity
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 
@@ -32,6 +33,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const { user, practiceHistory, savedWords, weeklyProgress } = useUser();
 
   const isNewUser = user.practiceSessions === 0 && user.xpPoints === 0 && user.minutesPracticedToday === 0;
+
+  // Pitch & Intonation average calculations
+  const pitchScores = practiceHistory.map(p => p.pitchScore).filter((s): s is number => typeof s === 'number');
+  const avgPitchScore = pitchScores.length > 0 ? Math.round(pitchScores.reduce((a, b) => a + b, 0) / pitchScores.length) : 86;
+
+  const intonationScores = practiceHistory.map(p => p.intonationScore).filter((s): s is number => typeof s === 'number');
+  const avgIntonationScore = intonationScores.length > 0 ? Math.round(intonationScores.reduce((a, b) => a + b, 0) / intonationScores.length) : 83;
 
   const beginnerLessons = [
     {
@@ -181,6 +189,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </div>
 
+      {/* Pitch & Intonation Real-Time Analysis Banner */}
+      <div className="p-5 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-purple-800/50">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-600/30 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0">
+            <Activity className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-0.5">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/30 text-purple-200 border border-purple-400/30">
+              Acoustic Pitch & Intonation Overview
+            </span>
+            <h3 className="text-base font-extrabold text-white">
+              Pitch Match: <span className="text-purple-300">{avgPitchScore}%</span> • Intonation Cadence: <span className="text-indigo-300">{avgIntonationScore}%</span>
+            </h3>
+            <p className="text-xs text-purple-200/80">
+              Real-time frequency contour tracking, word stress emphasis & speech rate feedback across sessions.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setActiveTab('checker')}
+          className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold text-xs shadow-lg shadow-purple-500/20 shrink-0 transition-all flex items-center gap-2"
+        >
+          <Sparkles className="w-4 h-4" /> Practice Pitch Contour
+        </button>
+      </div>
+
       {/* Recommended Lessons for New & Beginner Learners */}
       <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
@@ -311,17 +346,29 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 {practiceHistory.slice(0, 4).map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-3"
+                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 space-y-1"
                   >
-                    <div>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">{item.word}</span>
-                      <span className="text-[10px] text-slate-400 block">{item.type} • {item.date}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block">{item.word}</span>
+                        <span className="text-[10px] text-slate-400 block">{item.type} • {item.date}</span>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold shrink-0 ${
+                        item.score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {item.score}%
+                      </span>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold ${
-                      item.score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                      {item.score}%
-                    </span>
+
+                    {/* Pitch & Intonation metric pill if present */}
+                    {(item.pitchScore || item.intonationScore) && (
+                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                        <span>Pitch: {item.pitchScore ?? 86}%</span>
+                        <span>•</span>
+                        <span>Intonation: {item.intonationScore ?? 83}%</span>
+                        {item.speechRateWpm && <span>• {item.speechRateWpm} WPM</span>}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -49,6 +49,9 @@ import {
   HelpCircle
 } from 'lucide-react';
 
+import { AcousticAnalysisView } from '../components/AcousticAnalysisView';
+import { generateAcousticReport, ComprehensiveAcousticReport } from '../services/acousticAnalysis';
+
 type HindiSubTab = 'words' | 'sentences' | 'conversation' | 'reading' | 'vocab' | 'history';
 
 interface EvaluationResult {
@@ -59,6 +62,7 @@ interface EvaluationResult {
   feedbackTips: string[];
   grammarTip?: string;
   vocabTip?: string;
+  acousticReport?: ComprehensiveAcousticReport;
 }
 
 export const HindiPracticePage: React.FC = () => {
@@ -246,9 +250,26 @@ export const HindiPracticePage: React.FC = () => {
 
     const simulatedUserTranscript = targetText;
     const res = evaluateSpeech(targetText, simulatedUserTranscript);
+    const acousticReport = generateAcousticReport(targetText, res.pronunciationScore, 'Hindi');
+    res.acousticReport = acousticReport;
 
     // Record into global practice history & award XP
-    recordPracticeResult(targetText, res.pronunciationScore, `Hindi ${practiceType}`);
+    recordPracticeResult(targetText, res.pronunciationScore, `Hindi ${practiceType}`, {
+      accuracyScore: acousticReport.accuracyScore,
+      pitchScore: acousticReport.pitchScore,
+      intonationScore: acousticReport.intonationScore,
+      speechRateWpm: acousticReport.speechRateWpm,
+      fluencyScore: acousticReport.fluencyScore,
+      confidenceScore: acousticReport.confidenceScore,
+      volumeLevel: acousticReport.volumeLevel,
+      wordStress: acousticReport.wordStress,
+      pitchAnalysis: acousticReport.pitchAnalysis,
+      formantAnalysis: acousticReport.formantAnalysis,
+      mfccAnalysis: acousticReport.mfccAnalysis,
+      mfccSimilarityScore: acousticReport.mfccAnalysis.similarityScore,
+      mispronouncedSounds: acousticReport.mispronouncedSounds,
+      aiSuggestions: acousticReport.aiSuggestions
+    });
 
     return res;
   };
@@ -680,6 +701,21 @@ export const HindiPracticePage: React.FC = () => {
                     ))}
                   </ul>
                 </div>
+
+                {/* Acoustic Analysis (Formants, MFCC, Pitch & Intonation) */}
+                <AcousticAnalysisView
+                  language="Hindi"
+                  wordOrSentence={currentWord.hindi}
+                  overallScore={wordEval.pronunciationScore}
+                  accuracyScore={wordEval.accuracyScore}
+                  fluencyScore={wordEval.fluencyScore}
+                  formantAnalysis={wordEval.acousticReport?.formantAnalysis}
+                  mfccAnalysis={wordEval.acousticReport?.mfccAnalysis}
+                  mfccSimilarityScore={wordEval.acousticReport?.mfccAnalysis?.similarityScore}
+                  pitchAnalysis={wordEval.acousticReport?.pitchAnalysis}
+                  mispronouncedSounds={wordEval.acousticReport?.mispronouncedSounds}
+                  aiSuggestions={wordEval.acousticReport?.aiSuggestions}
+                />
               </div>
             )}
           </div>
@@ -867,6 +903,21 @@ export const HindiPracticePage: React.FC = () => {
                     ))}
                   </ul>
                 </div>
+
+                {/* Acoustic Analysis (Formants, MFCC, Pitch & Intonation) */}
+                <AcousticAnalysisView
+                  language="Hindi"
+                  wordOrSentence={currentSentence.hindi}
+                  overallScore={sentenceEval.pronunciationScore}
+                  accuracyScore={sentenceEval.accuracyScore}
+                  fluencyScore={sentenceEval.fluencyScore}
+                  formantAnalysis={sentenceEval.acousticReport?.formantAnalysis}
+                  mfccAnalysis={sentenceEval.acousticReport?.mfccAnalysis}
+                  mfccSimilarityScore={sentenceEval.acousticReport?.mfccAnalysis?.similarityScore}
+                  pitchAnalysis={sentenceEval.acousticReport?.pitchAnalysis}
+                  mispronouncedSounds={sentenceEval.acousticReport?.mispronouncedSounds}
+                  aiSuggestions={sentenceEval.acousticReport?.aiSuggestions}
+                />
               </div>
             )}
           </div>

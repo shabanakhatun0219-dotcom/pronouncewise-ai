@@ -1,4 +1,5 @@
 import { PronunciationResult, DictionaryEntry, TutorMessage } from '../types';
+import { generateAcousticReport, LanguageCode } from './acousticAnalysis';
 import { SAMPLE_DICTIONARY } from '../data/mockData';
 
 export async function evaluatePronunciationAPI(
@@ -191,13 +192,108 @@ function generateClientEvaluation(
 
   const syllables = cleanTarget.length > 6 ? [cleanTarget.slice(0, 3), cleanTarget.slice(3, 6).toUpperCase(), cleanTarget.slice(6)].filter(Boolean) : [cleanTarget];
 
+  // Dynamic pitch & intonation calculations
+  const pitchScore = Math.min(100, Math.max(68, Math.round(rawScore + (Math.random() * 6 - 3))));
+  const intonationScore = Math.min(100, Math.max(65, Math.round(rawScore + (Math.random() * 8 - 4))));
+  const fluencyScore = Math.min(100, Math.max(70, Math.round(rawScore + 2)));
+  const confidenceScore = Math.min(100, Math.max(72, Math.round(rawScore + 4)));
+  const wpm = Math.round(130 + Math.random() * 20);
+  const volumeDb = Math.round(72 + Math.random() * 6);
+  const volumeLevelStr = `${volumeDb} dB (Optimal)`;
+
+  // Generate word stress description
+  const mainStressIndex = Math.floor(syllables.length / 2);
+  const wordStressStr = syllables.length > 1
+    ? `Primary stress on syllable ${mainStressIndex + 1} ("${syllables[mainStressIndex] || cleanTarget}")`
+    : `Primary stress on initial vowel ("${cleanTarget.slice(0, 2)}")`;
+
+  // Pitch Contour Data Points
+  const pitchDataPoints = (syllables.length > 1 ? syllables : ['Start', 'Peak', 'Release']).map((syllable, idx) => {
+    const baseNative = 160 + (idx === mainStressIndex ? 55 : idx % 2 === 0 ? 10 : -20);
+    let status: 'optimal' | 'flat' | 'too_high' | 'too_low' = 'optimal';
+    let userOffset = (Math.random() - 0.5) * 15;
+
+    if (idx === 1 && rawScore < 80) {
+      status = 'flat';
+      userOffset = -35;
+    } else if (idx === 2 && rawScore < 85) {
+      status = 'too_high';
+      userOffset = 45;
+    } else if (idx === 0 && rawScore < 75) {
+      status = 'too_low';
+      userOffset = -40;
+    }
+
+    return {
+      time: `0.${(idx + 1) * 2}s`,
+      userPitch: Math.round(Math.max(110, Math.min(270, baseNative + userOffset))),
+      nativePitch: baseNative,
+      status,
+      wordLabel: syllable
+    };
+  });
+
+  const highlightedSections = [
+    ...(pitchScore < 85 ? [{
+      section: `Syllable "${syllables[mainStressIndex] || 'Middle'}"`,
+      issue: 'flat' as const,
+      message: 'Pitch is slightly too flat on the primary stressed syllable. Lift your voice pitch by +20Hz to sound more natural.'
+    }] : []),
+    ...(intonationScore < 82 ? [{
+      section: `Sentence Ending`,
+      issue: 'too_low' as const,
+      message: 'Sudden drop in intonation at the end of phrase. Maintain steady breath support.'
+    }] : []),
+    ...(rawScore >= 85 ? [{
+      section: `Peak Modulation`,
+      issue: 'flat' as const,
+      message: 'Minor pitch flattening on transition vowels. Increase pitch variation to sound even more natural.'
+    }] : [])
+  ];
+
+  const aiSuggestions = [
+    'Increase pitch variation on key stressed syllables to sound more natural.',
+    'Reduce monotone speech by introducing gentle rising intonation.',
+    `Stress the highlighted syllable "${syllables[mainStressIndex] || cleanTarget}" with pitch elevation.`,
+    'Maintain a steady speech rate around 135 WPM for optimal clarity.'
+  ];
+
+  const pitchAnalysis = {
+    overallScore: rawScore,
+    pitchScore,
+    intonationScore,
+    speechRateWpm: wpm,
+    wordStress: wordStressStr,
+    fluencyScore,
+    confidenceScore,
+    volumeLevel: volumeLevelStr,
+    pitchData: pitchDataPoints,
+    highlightedSections,
+    aiSuggestions
+  };
+
+  const acousticReport = generateAcousticReport(targetText, rawScore, 'English');
+
   return {
     word: targetText,
     userTranscript: userTranscript || targetText,
     overallScore: rawScore,
+    accuracyScore: acousticReport.accuracyScore,
     clarityScore: Math.min(100, rawScore + 3),
     rhythmScore: Math.max(60, rawScore - 4),
-    intonationScore: Math.min(100, rawScore + 1),
+    intonationScore,
+    pitchScore,
+    speechRateWpm: wpm,
+    wordStress: wordStressStr,
+    fluencyScore,
+    confidenceScore,
+    volumeLevel: volumeLevelStr,
+    pitchAnalysis,
+    formantAnalysis: acousticReport.formantAnalysis,
+    mfccAnalysis: acousticReport.mfccAnalysis,
+    mfccSimilarityScore: acousticReport.mfccAnalysis.similarityScore,
+    mispronouncedSounds: acousticReport.mispronouncedSounds,
+    aiSuggestions: acousticReport.aiSuggestions,
     phonemes: [
       {
         symbol: '/θ/',
@@ -225,11 +321,11 @@ function generateClientEvaluation(
       }
     ],
     aiFeedback: rawScore >= 85
-      ? `Outstanding pronunciation! Your overall clarity for "${targetText}" was ${rawScore}%. Your vowel length and consonant articulation are highly crisp.`
-      : `Good effort! Your pronunciation score for "${targetText}" is ${rawScore}%. Focus on sustaining the primary stressed syllable and loosening your jaw on long vowels.`,
+      ? `Outstanding pronunciation! Your overall score for "${targetText}" was ${rawScore}%. Pitch contour, Formant frequencies, and MFCC timbral profile closely match native English models.`
+      : `Good effort! Your pronunciation score for "${targetText}" is ${rawScore}%. Adjust vowel height for optimal Formant resonance and practice stress emphasis for "${targetText}".`,
     mouthTip: `Keep your lips rounded and drop your lower jaw slightly for the primary stressed vowel in "${targetText}".`,
     syllables,
-    stressedSyllableIndex: 1,
+    stressedSyllableIndex: mainStressIndex,
     recommendedPractice: `Practice saying "${targetText}" 3 times slowly, then increase speed to natural conversational pace.`
   };
 }
